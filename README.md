@@ -6,3 +6,5 @@ This repository contains:
 - Synthetic dataset
 - R Markdown notebook
 - Additional analysis code
+
+Deidentified dataset available at: https://doi.org/10.5061/dryad.m63xsj44t
