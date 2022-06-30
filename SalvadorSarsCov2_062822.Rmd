@@ -178,7 +178,7 @@ i<-j<-minrow<-1
 
 for(i in 1: length(varnames2)){
   
-  eval(str2expression(paste0("subdat <- dat3$", varnames2[i])))
+  eval(str2expression(paste0("subdat <- dat3$", varnames2[i], "[which(dat3$age >= 18)]")))
   varlev <- levels(subdat)
   numlev <- length(varlev)
   
@@ -276,15 +276,15 @@ sera2 <- dat3$covidser2[which(dat3$age < 18 & dat3$adcat == "2")]
 sera2 <- prop.test(sum(sera2 == 1, na.rm = T), length(sera2))
 
 ```
-- Overall: `r round(serov$est * 100, 2)` [95% CI `r round(serov$conf.int[1] * 100, 2)` - `r round(serov$conf.int[1] * 100, 2)`]
+- Overall: `r round(serov$est * 100, 2)` [95% CI `r round(serov$conf.int[1] * 100, 2)` - `r round(serov$conf.int[2] * 100, 2)`]
 
-- Children (<18y): `r round(serch$est * 100, 2)` [95% CI `r round(serch$conf.int[1] * 100, 2)` - `r round(serch$conf.int[1] * 100, 2)`]
+- Children (<18y): `r round(serch$est * 100, 2)` [95% CI `r round(serch$conf.int[1] * 100, 2)` - `r round(serch$conf.int[2] * 100, 2)`]
 
-- Adults: `r round(serad$est * 100, 2)` [95% CI `r round(serad$conf.int[1] * 100, 2)` - `r round(serad$conf.int[1] * 100, 2)`]
+- Adults: `r round(serad$est * 100, 2)` [95% CI `r round(serad$conf.int[1] * 100, 2)` - `r round(serad$conf.int[2] * 100, 2)`]
 
-- Male participants: `r round(serm$est * 100, 2)` [95% CI `r round(serm$conf.int[1] * 100, 2)` - `r round(serm$conf.int[1] * 100, 2)`]
+- Male participants: `r round(serm$est * 100, 2)` [95% CI `r round(serm$conf.int[1] * 100, 2)` - `r round(serm$conf.int[2] * 100, 2)`]
 
-- Female participants: `r round(serf$est * 100, 2)` [95% CI `r round(serf$conf.int[1] * 100, 2)` - `r round(serf$conf.int[1] * 100, 2)`]  
+- Female participants: `r round(serf$est * 100, 2)` [95% CI `r round(serf$conf.int[1] * 100, 2)` - `r round(serf$conf.int[2] * 100, 2)`]  
 
 <br/>
   
@@ -302,12 +302,12 @@ sera2 <- prop.test(sum(sera2 == 1, na.rm = T), length(sera2))
 
 <br/>
   
-- Seroprevalence among adults living with children: `r round(sercy$est * 100, 2)`% [95% CI `r round(sercy$conf.int[1] * 100, 2)` - `r round(sercy$conf.int[1] * 100, 2)`%]
-- Seroprevalence among adults without children in their household: `r round(sercn$est * 100, 2)`% [95% CI `r round(sercn$conf.int[1] * 100, 2)` - `r round(sercn$conf.int[1] * 100, 2)`%]
+- Seroprevalence among adults living with children: `r round(sercy$est * 100, 2)`% [95% CI `r round(sercy$conf.int[1] * 100, 2)` - `r round(sercy$conf.int[2] * 100, 2)`%]
+- Seroprevalence among adults without children in their household: `r round(sercn$est * 100, 2)`% [95% CI `r round(sercn$conf.int[1] * 100, 2)` - `r round(sercn$conf.int[2] * 100, 2)`%]
 
 
-- Seroprevalence among children living with 1 adult: `r round(sera1$est * 100, 2)`% [95% CI `r round(sera1$conf.int[1] * 100, 2)` - `r round(sera1$conf.int[1] * 100, 2)`%]
-- Seroprevalence among children living with 2 adults: `r round(sera2$est * 100, 2)`% [95% CI `r round(sera2$conf.int[1] * 100, 2)` - `r round(sera2$conf.int[1] * 100, 2)`%]  
+- Seroprevalence among children living with 1 adult: `r round(sera1$est * 100, 2)`% [95% CI `r round(sera1$conf.int[1] * 100, 2)` - `r round(sera1$conf.int[2] * 100, 2)`%]
+- Seroprevalence among children living with 2 adults: `r round(sera2$est * 100, 2)`% [95% CI `r round(sera2$conf.int[1] * 100, 2)` - `r round(sera2$conf.int[2] * 100, 2)`%]  
   
 <br/><br/>
 
@@ -326,11 +326,11 @@ sxign <- prop.test(tmp[2, 1], tmp[3, 1])
 sxdif <- prop.test(c(tmp[2, 2], tmp[2, 1]), c(tmp[3, 2], tmp[3, 1]))
 ```
 
-- Frequency of symptoms among seropositive individuals: `r round(sxigp$est * 100, 2)`% [95% CI `r round(sxigp$conf.int[1] * 100, 2)` - `r round(sxigp$conf.int[1] * 100, 2)` %]
+- Frequency of symptoms among seropositive individuals: `r round(sxigp$est * 100, 2)`% [95% CI `r round(sxigp$conf.int[1] * 100, 2)` - `r round(sxigp$conf.int[2] * 100, 2)` %]
 
-- Frequency of symptoms among seronegative individuals: `r round(sxign$est * 100, 2)`% [95% CI `r round(sxign$conf.int[1] * 100, 2)` - `r round(sxign$conf.int[1] * 100, 2)` %]
+- Frequency of symptoms among seronegative individuals: `r round(sxign$est * 100, 2)`% [95% CI `r round(sxign$conf.int[1] * 100, 2)` - `r round(sxign$conf.int[2] * 100, 2)` %]
 
-- Difference: `r round(abs(sxdif$est[1] - sxdif$est[2])* 100, 2)`% [95% CI `r round(sxdif$conf.int[1] * 100, 2)` - `r round(sxdif$conf.int[1] * 100, 2)` %]  
+- Difference: `r round(abs(sxdif$est[1] - sxdif$est[2])* 100, 2)`% [95% CI `r round(sxdif$conf.int[1] * 100, 2)` - `r round(sxdif$conf.int[2] * 100, 2)` %]  
 
 <br/><br/>
   
@@ -352,9 +352,9 @@ dpcunempf <- summary(dpcunempf)
 dpcunempm <- summary(dpcunempm)
 
 ```
-- Unemployment among women: `r round(unempf$est * 100, 2)`% [95% CI `r round(unempf$conf.int[1] * 100, 2)` - `r round(unempf$conf.int[1] * 100, 2)`%]
+- Unemployment among women: `r round(unempf$est * 100, 2)`% [95% CI `r round(unempf$conf.int[1] * 100, 2)` - `r round(unempf$conf.int[2] * 100, 2)`%]
 
-- Unemployment among men: `r round(unempm$est * 100, 2)`% [95% CI `r round(unempm$conf.int[1] * 100, 2)` - `r round(unempm$conf.int[1] * 100, 2)`%]  
+- Unemployment among men: `r round(unempm$est * 100, 2)`% [95% CI `r round(unempm$conf.int[1] * 100, 2)` - `r round(unempm$conf.int[2] * 100, 2)`%]  
   
 <br/>
 
