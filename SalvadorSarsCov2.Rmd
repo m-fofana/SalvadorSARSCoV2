@@ -8,13 +8,12 @@ output:
 ---
 
 
-```{r setup, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-path <- dirname(rstudioapi::getActiveDocumentContext()$path)
-knitr::opts_knit$set(root.dir = path)
+# knitr::opts_knit$set(root.dir = here::here())
 ```
 
-```{r format, echo = FALSE, include = FALSE, warnings = FALSE, results = 'hide'}
+```{r format, echo=FALSE, include=FALSE, warnings=FALSE, results='hide'}
 # Load packages and source necessary files
 
 library(abind)
@@ -44,19 +43,15 @@ library(pan)
 library(mediation)
 library(knitr)
 library(parameters)
-library(readxl)
+
 
 # I: LOAD & FORMAT DATA--------------------------------------------------------
-dat2 <- read_excel("DeIDData.xlsx")
-
-# Convert factors
-dat2[sapply(dat2, is.character)] <- lapply(dat2[sapply(dat2, is.character)], as.factor)
+dat2 <- dat
+  # read.csv("DeIDData", header = T, stringsAsFactors = T)
 
 dat2 <- dat2 %>%
 	mutate(inchi = as.factor(dpc >= 1.25)) %>%
-  mutate(covidser1 = NA) %>%
-	mutate(covidser1 = replace(covidser1, razao_l45 >= 0.8 & !is.na(razao_l45), "1")) %>%
-  	mutate(covidser1 = replace(covidser1, razao_l45 < 0.8 & !is.na(razao_l45), "0")) %>%
+	mutate(covidser1 = razao_l45 >= 0.8 & !is.na(razao_l45)) %>%
   mutate(covidser2 = as.numeric(covidser1)) %>%
   mutate(covidser3 = as.factor(covidser2))
 
@@ -67,10 +62,8 @@ dat2<- dat2 %>%
   mutate(inccat = relevel(inccat, ref = ">=5")) %>%
   mutate(schooling = relevel(schooling, ref = ">9")) %>%
   mutate(employedyn = relevel(employedyn, "Unemployed")) %>%
-  mutate(u18yn = !is.na(u18cat)) %>%
-  group_by(hhid) %>%
-  mutate(indid = row_number()) %>%
-  ungroup()
+  mutate(indid = trunc((as.numeric(pid) - trunc(as.numeric(pid))) * 10 )) %>%
+  mutate(u18yn = !is.na(u18cat))
 
 dat2$adyn = as.factor(dat2$age >= 18)
 
@@ -90,75 +83,53 @@ agenames <- c("<18", "18-29", "30-44", "45-59", ">=60")
 ```
 
 ## Aim
-This analysis describes the seroprevalence of SARS-CoV-2 and associated risk factors in a cohort of residents in Pau da Lima, an urban slum of Salvador, Brazil. The provided code replicates the analyses featured in Fofana et al, using a deidentified dataset.  
-  
+This analysis describes the seroprevalence of SARS-CoV-2 and associated risk factors in a cohort of residents in Pau da Lima, an urban slum of Salvador, Brazil. The provided code replicates the analyses featured in Fofana et al, using a synthetic dataset designed to approximate the study data.
+
 
 ## Sociodemographic characteristics
 
-- Number of individuals with values for the following variables:
+Number of individuals with values for the following variables:
   
--- Age: `r sum(!is.na(dat3$age))`
-
--- Gender: `r sum(!is.na(dat3$gender))`
-
--- Daily per capita income: `r sum(!is.na(dat3$dpc))`
-
--- Ethnicity: `r sum(!is.na(dat3$racecat))`
-
--- Marital status: `r sum(!is.na(dat3$marriedyn))`
-
--- Employment: `r sum(!is.na(dat3$employment))`
-
--- Employment and per capita income: `r sum(!is.na(dat3$dpc))` & `r sum(is.na(dat3$employment))` 
-
-<br/>
+Age: `r sum(!is.na(dat3$age))`
   
-- The sample includes `r sum(dat3$age < 18)` children and `r sum(dat3$age >= 18)` adults.  
-
-<br/>
+Sex: `r sum(!is.na(dat3$gender))`
   
-- Median and IQR for household size: `r summary(dat4$hsize)[3]` [`r summary(dat4$hsize)[2]` - `r summary(dat4$hsize)[5]`]
-
-- Median and IQR for daily per capita income: `r summary(dat4$dpc)[3]` [`r summary(dat4$dpc)[2]` - `r summary(dat4$dpc)[5]`]
-
-- Median and IQR for age: `r summary(dat3$age)[3]` [`r summary(dat3$age)[2]` - `r summary(dat3$age)[5]`]  
-
-<br/>
+Daily per capita income: `r sum(!is.na(dat3$dpc))`
   
-- The total sample includes `r nrow(dat3)` individuals with serology results, among `r length(unique(dat3$hhid))` households. 
+Ethnicity: `r sum(!is.na(dat3$racecat))`
+  
+Marital status: `r sum(!is.na(dat3$marriedyn))`
+  
+Employment: `r sum(!is.na(dat3$employment))`
+
+Employment and per capita income: `r sum(!is.na(dat3$dpc))` & `r sum(is.na(dat3$employment))`
 
 
-- Serological data were available for all members of `r sum(dat3$sercomp == "Yes" & dat3$indid == 1, na.rm = T)` households, with `r sum(dat3$sercomp == "Yes", na.rm = T)` individuals.  
-  
-<br/>
+The total sample includes `r nrow(dat3)` individuals with serology results, among `r length(unique(dat3$hhid))` households. 
 
-- Adults with 6 or fewer years of education: `r sum(dat3$schooling[which(dat3$age >= 18)] == "0-6", na.rm = T)` (`r 100 * (sum(dat3$schooling[which(dat3$age >= 18)] == "0-6", na.rm = T) / sum(!is.na(dat3$schooling[which(dat3$age >= 18)])))`%)
-  
-  
-- Unemployed adults: `r sum(dat3$employedyn[which(dat3$age >= 18)] == "Unemployed", na.rm = T)` (`r 100 * (sum(dat3$employedyn[which(dat3$age >= 18)] == "Unemployed", na.rm = T) / sum(!is.na(dat3$employedyn[which(dat3$age >= 18)])))`%)  
-  
-<br/><br/>
-  
+The sample includes `r sum(dat3$age<18)` children and `r sum(dat3$age>=18)` adults.
+
+Median and IQR for household size: `r summary(dat4$hsize)[3]` [`r summary(dat4$hsize)[2]` - `r summary(dat4$hsize)[5]`]
+
+Median and IQR for daily per capita income: `r summary(dat4$dpc)[3]` [`r summary(dat4$dpc)[2]` - `r summary(dat4$dpc)[5]`]
+
+
 #### Table of demographic characteristics
-```{r desc7, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r desc7, echo=FALSE, warnings=FALSE, results='hide'}
 tab1 <- tab2 <- data.frame()
-varnames <- c("agecat", "gender", "racecat", "inccat", grep("ultm$", colnames(dat3), value = T))
+varnames <- c("agecat", "gender", "racecat", "inccat", grep("ultm$", colnames(dat3), value=T))
 
 varnames2 <- c("marriedyn",
               "employment", "schooling")
-varnames3 <- c("Age", "Gender", "Race", "Daily per capita income", "Sanitizer use",
-               "Distancing >=2m", "Handwashing", "Isolation", "Mask use") 
-
-varnames4 <- c("Marriage or stable union", "Employment", "Schooling")
 
 i<-j<-minrow<-1
 for(i in 1: length(varnames)){
   
-  eval(str2expression(paste0("subdat <- dat3$", varnames[i])))
+  eval(str2expression(paste0("subdat <- dat3$",varnames[i])))
   varlev <- levels(subdat)
   numlev <- length(varlev)
   
-  tab1[minrow, 1] <- varnames3[i]
+  tab1[minrow, 1] <- varnames[i]
   tab1[minrow, 2] <- sum(!is.na(subdat))
   
   for(j in 1:numlev){
@@ -178,11 +149,11 @@ i<-j<-minrow<-1
 
 for(i in 1: length(varnames2)){
   
-  eval(str2expression(paste0("subdat <- dat3$", varnames2[i])))
+  eval(str2expression(paste0("subdat <- dat3$",varnames2[i])))
   varlev <- levels(subdat)
   numlev <- length(varlev)
   
-  tab2[minrow, 1] <- varnames4[i]
+  tab2[minrow, 1] <- varnames2[i]
   tab2[minrow, 2] <- sum(!is.na(subdat))
   
   for(j in 1:numlev){
@@ -216,163 +187,48 @@ tab2$bigN[is.na(tab2$bigN)] <- ""
 tab1 <- tab1[, c(1:6, 9, 7, 8)]
 tab2 <- tab2[, c(1:6, 9, 7, 8)]
 
-tab1$proppos <- round(tab1$proppos*100, 2)
-tab1$ub <- round(tab1$ub * 100, 2)
-tab1$lb <- round(tab1$lb * 100, 2)
+tab1$proppos <- round(tab1$proppos*100,2)
+tab1$ub <- round(tab1$ub*100,2)
+tab1$lb <- round(tab1$lb*100,2)
 
-tab2$proppos <- round(tab2$proppos * 100, 2)
-tab2$ub <- round(tab2$ub * 100, 2)
-tab2$lb <- round(tab2$lb * 100, 2)
+tab2$proppos <- round(tab2$proppos*100,2)
+tab2$ub <- round(tab2$ub*100,2)
+tab2$lb <- round(tab2$lb*100,2)
 ```
-  
 ##### All participants
-`r knitr::kable(tab1, "simple", col.names = c("Variable", "N", "Category", "Total", "IgG+", "IgG-", "% IgG+", "LB", "UB"))`  
-  
-<br/>
-  
+`r kable(tab1, "simple", col.names = c("Variable", "N", "Category", "Total", "IgG+", "IgG-", "% IgG+", "LB", "UB"))`
+
 ##### Adults
-`r knitr::kable(tab2, "simple", col.names = c("Variable", "N", "Category", "Total", "IgG+", "IgG-", "% IgG+", "LB", "UB"))`  
-  
-<br/>
-  
-##### Adherence to non-pharmaceutical interventions
-```{r npi, echo = FALSE, warnings = FALSE}
+`r kable(tab2, "simple", col.names = c("Variable", "N", "Category", "Total", "IgG+", "IgG-", "% IgG+", "LB", "UB"))`
 
-tabnpi <- data.frame(matrix(nrow=6, ncol = 5))
-rownames(tabnpi) <- c(levels(dat3$hgmultm), "NA", "Total")
-colnames(tabnpi) <- c("handwash", "sanitizer", "mask", "2m", "isolation")
-tabnpi[1:5, 1] <- as.numeric(summary(dat3$hgmultm))
-tabnpi[1:5, 2] <- as.numeric(summary(dat3$alcultm))
-tabnpi[1:5, 3] <- as.numeric(summary(dat3$masultm))
-tabnpi[1:5, 4] <- as.numeric(summary(dat3$dtsultm))
-tabnpi[1:5, 5] <- as.numeric(summary(dat3$isultm))
-tabnpi[6, ] <- colSums(tabnpi[1:5,])
-
-tabnpipct <- tigerstats::colPerc(tabnpi[1:5,])
-```
-`r kable(tabnpipct, "simple", col.names = c("Handwashing", "Alcohol-based sanitizer", "Mask", "2m distancing", "Home isolation"))`  
-  
-<br/>  
-  
-#### Unadjusted seroprevalence estimates
-```{r desc5, echo = FALSE, warnings = FALSE, results = 'hide'}
-serov <- dat3$covidser2
-serov <- prop.test(sum(serov == 1), length(serov))
-serch <- dat3$covidser2[which(dat3$age < 18)]
-serch <- prop.test(sum(serch == 1), length(serch))
-serad <- dat3$covidser2[which(dat3$age >= 18)]
-serad <- prop.test(sum(serad == 1), length(serad))
-serm <- dat3$covidser2[which(dat3$gender == "Male")]
-serm <- prop.test(sum(serm == 1), length(serm))
-serf <- dat3$covidser2[which(dat3$gender == "Female")]
-serf <- prop.test(sum(serf == 1), length(serf))
-sercy <- dat3$covidser2[which(dat3$age >= 18 & dat3$u18yn == T)]
-sercy <- prop.test(sum(sercy == 1), length(sercy))
-sercn <- dat3$covidser2[which(dat3$age >= 18 & dat3$u18yn == F)]
-sercn <- prop.test(sum(sercn == 1), length(sercn))
-sera1 <- dat3$covidser2[which(dat3$age < 18 & dat3$adcat == "1")]
-sera1 <- prop.test(sum(sera1 == 1, na.rm = T), length(sera1))
-sera2 <- dat3$covidser2[which(dat3$age < 18 & dat3$adcat == "2")]
-sera2 <- prop.test(sum(sera2 == 1, na.rm = T), length(sera2))
+#### Raw seroprevalence in adults vs children
+```{r desc5, echo=FALSE, warnings=FALSE, results='hide'}
+serch <- dat3$covidser2[which(dat3$age <18)]
+serch <- prop.test(sum(serch==1), length(serch))
+serad <- dat3$covidser2[which(dat3$age >=18)]
+serad <- prop.test(sum(serad==1), length(serad))
 
 ```
-- Overall: `r round(serov$est * 100, 2)` [95% CI `r round(serov$conf.int[1] * 100, 2)` - `r round(serov$conf.int[1] * 100, 2)`]
-
-- Children (<18y): `r round(serch$est * 100, 2)` [95% CI `r round(serch$conf.int[1] * 100, 2)` - `r round(serch$conf.int[1] * 100, 2)`]
-
-- Adults: `r round(serad$est * 100, 2)` [95% CI `r round(serad$conf.int[1] * 100, 2)` - `r round(serad$conf.int[1] * 100, 2)`]
-
-- Male participants: `r round(serm$est * 100, 2)` [95% CI `r round(serm$conf.int[1] * 100, 2)` - `r round(serm$conf.int[1] * 100, 2)`]
-
-- Female participants: `r round(serf$est * 100, 2)` [95% CI `r round(serf$conf.int[1] * 100, 2)` - `r round(serf$conf.int[1] * 100, 2)`]  
-
-<br/>
-  
-- A total of `r length(unique(dat3$hhid[which(dat3$covidser1 == 1)]))` (`r 100 * (length(unique(dat3$hhid[which(dat3$covidser1 == 1)])) / length(unique(dat3$hhid)))`%) households have at least one seropositive individual.  
-  
-- Age among seropositive individuals: median `r summary(dat3$age[dat3$covidser1 == 1])[3]` [IQR `r summary(dat3$age[dat3$covidser1 == 1])[2]` - `r summary(dat3$age[dat3$covidser1 == 1])[5]`]
-
-- Age among seronegative individuals: median `r summary(dat3$age[dat3$covidser1 == 0])[3]` [IQR `r summary(dat3$age[dat3$covidser1 == 0])[2]` - `r summary(dat3$age[dat3$covidser1 == 0])[5]`]  
-  
-<br/>
-
-- Household size among seropositive individuals: median `r summary(dat3$hsize[which(dat3$covidser1 == 1)])[3]` [IQR `r summary(dat3$hsize[which(dat3$covidser1 == 1)])[2]` - `r summary(dat3$hsize[which(dat3$covidser1 == 1)])[5]`]
-
-- Household size among seronegative individuals: median `r summary(dat3$hsize[which(dat3$covidser1 == 0)])[3]` [IQR `r summary(dat3$hsize[which(dat3$covidser1 == 0)])[2]` - `r summary(dat3$hsize[which(dat3$covidser1 == 0)])[5]`]  
-
-<br/>
-  
-- Seroprevalence among adults living with children: `r round(sercy$est * 100, 2)`% [95% CI `r round(sercy$conf.int[1] * 100, 2)` - `r round(sercy$conf.int[1] * 100, 2)`%]
-- Seroprevalence among adults without children in their household: `r round(sercn$est * 100, 2)`% [95% CI `r round(sercn$conf.int[1] * 100, 2)` - `r round(sercn$conf.int[1] * 100, 2)`%]
+Children: `r round(serch$est * 100, 2)` [`r round(serch$conf.int[1] * 100, 2)` - `r round(serch$conf.int[1] * 100, 2)`]
 
 
-- Seroprevalence among children living with 1 adult: `r round(sera1$est * 100, 2)`% [95% CI `r round(sera1$conf.int[1] * 100, 2)` - `r round(sera1$conf.int[1] * 100, 2)`%]
-- Seroprevalence among children living with 2 adults: `r round(sera2$est * 100, 2)`% [95% CI `r round(sera2$conf.int[1] * 100, 2)` - `r round(sera2$conf.int[1] * 100, 2)`%]  
-  
-<br/><br/>
+Adults: `r round(serad$est * 100, 2)` [`r round(serad$conf.int[1] * 100, 2)` - `r round(serad$conf.int[1] * 100, 2)`]
+
 
 #### Reported symptoms
-```{r desc6, echo = FALSE, warnings = FALSE, results = 'hide'}
-tmptab <- as.table(colPerc(xtabs(~symptoms + covidser2, data = dat3)))[, -3] 
+```{r desc6, echo=FALSE, warnings=FALSE, results='hide'}
+tmptab <- as.table(rowPerc(xtabs(~symptoms + covidser2, data = dat3)))[, -3] 
 
 colnames(tmptab) <- c("IgG negative", "IgG positive")
-rownames(tmptab) <- c("No symptoms", "Symptoms", "Total")
-
-tmp <- table(dat3$symptoms, dat3$covidser2)
-tmp <- rbind(tmp, colSums(tmp))
-sxigp <- prop.test(tmp[2, 2], tmp[3, 2])
-sxign <- prop.test(tmp[2, 1], tmp[3, 1])
-
-sxdif <- prop.test(c(tmp[2, 2], tmp[2, 1]), c(tmp[3, 2], tmp[3, 1]))
-```
-
-- Frequency of symptoms among seropositive individuals: `r round(sxigp$est * 100, 2)`% [95% CI `r round(sxigp$conf.int[1] * 100, 2)` - `r round(sxigp$conf.int[1] * 100, 2)` %]
-
-- Frequency of symptoms among seronegative individuals: `r round(sxign$est * 100, 2)`% [95% CI `r round(sxign$conf.int[1] * 100, 2)` - `r round(sxign$conf.int[1] * 100, 2)` %]
-
-- Difference: `r round(abs(sxdif$est[1] - sxdif$est[2])* 100, 2)`% [95% CI `r round(sxdif$conf.int[1] * 100, 2)` - `r round(sxdif$conf.int[1] * 100, 2)` %]  
-
-<br/><br/>
-  
-#### Sociodemographic differences by gender
-```{r sd, echo = FALSE, warnings = FALSE, results = 'hide'}
-unempf <- dat3$employedyn[which(dat3$gender == "Female" & dat3$age >= 18)]
-unempf <- prop.test(sum(unempf == "Unemployed", na.rm = T), length(unempf))
-unempm <- dat3$employedyn[which(dat3$gender == "Male" & dat3$age >= 18)]
-unempm <- prop.test(sum(unempm == "Unemployed", na.rm = T), length(unempm))
-
-dpcempf <- dat3$dpc[which(dat3$gender == "Female" & dat3$age >= 18 & dat3$employedyn == "Employed")]
-dpcempm <- dat3$dpc[which(dat3$gender == "Male" & dat3$age >= 18 & dat3$employedyn == "Employed")]
-dpcunempf <- dat3$dpc[which(dat3$gender == "Female" & dat3$age >= 18 & dat3$employedyn == "Unemployed")]
-dpcunempm <- dat3$dpc[which(dat3$gender == "Male" & dat3$age >= 18 & dat3$employedyn == "Unemployed")]
-
-dpcempf <- summary(dpcempf)
-dpcempm <- summary(dpcempm)
-dpcunempf <- summary(dpcunempf)
-dpcunempm <- summary(dpcunempm)
+rownames(tmptab) <- c("No symptoms", "Symptoms")
 
 ```
-- Unemployment among women: `r round(unempf$est * 100, 2)`% [95% CI `r round(unempf$conf.int[1] * 100, 2)` - `r round(unempf$conf.int[1] * 100, 2)`%]
 
-- Unemployment among men: `r round(unempm$est * 100, 2)`% [95% CI `r round(unempm$conf.int[1] * 100, 2)` - `r round(unempm$conf.int[1] * 100, 2)`%]  
-  
-<br/>
+`r kable(tmptab, "simple")`
 
-- Daily per capita income among employed women: median `r dpcempf[3]` [IQR `r dpcempf[2]` - `r dpcempf[5]`]
 
-- Daily per capita income among employed men: median `r dpcempm[3]` [IQR `r dpcempm[2]` - `r dpcempm[5]`]  
-
-- Daily per capita income among unemployed women: median `r dpcunempf[3]` [IQR `r dpcunempf[2]` - `r dpcunempf[5]`]
-
-- Daily per capita income among unemployed men: median `r dpcunempm[3]` [IQR `r dpcunempm[2]` - `r dpcunempm[5]`]  
-  
-<br/><br/>  
-  
 ### Figure 2
-    
-Panel A: Age distribution of SARS-CoV-2 seronegative and seropositive individuals.
-  
-```{r fig2a, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r fig2a, echo=FALSE, warnings=FALSE, results='hide'}
 p2a <- ggplot(dat3, aes(x = as.factor(covidser2), y = age, color = as.factor(covidser2))) +
   geom_violin(alpha = .75, size = 1.5, show.legend = F) +
   geom_jitter(alpha = .25, show.legend = F) +
@@ -381,14 +237,9 @@ p2a <- ggplot(dat3, aes(x = as.factor(covidser2), y = age, color = as.factor(cov
   scale_color_manual(values = cbbPalette[5:6]) +
   theme(legend.position = "none") +
   theme_classic()
-
-p2a
-
 ```
 
-Panel B: : SARS-CoV-2 seroprevalence and 95% confidence interval associated with age, as estimated using a generalized additive model. 
-  
-```{r fig2b, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r fig2b, echo=FALSE, warnings=FALSE, results='hide'}
 # Panel B
 ageneg <- dat3[which(dat3$covidser2 == 0), c("age", "covidser2")]
 agepos <- dat3[which(dat3$covidser2 == 1), c("age", "covidser2")]
@@ -405,53 +256,51 @@ mdltmp1F <- gam(covidser2 ~ s(age), data = dat3[which(dat3$gender == "Female"),]
 mdltmp1M <- gam(covidser2 ~ s(age), data = dat3[which(dat3$gender == "Male"),])
 
 testdata1 = data.frame(age = seq(5, 75, by=0.2))
-fits1 = predict(mdltmp1, newdata = testdata1, type = 'response', se=T)
+fits1 = predict(mdltmp1, newdata=testdata1, type='response', se=T)
 predicts1 = data.frame(testdata1, fits1) %>% 
-  mutate(lower = fit - 1.96 * se.fit,
-         upper = fit + 1.96 * se.fit) %>%
+  mutate(lower = fit - 1.96*se.fit,
+         upper = fit + 1.96*se.fit) %>%
   mutate(odds = fit / (1 - fit)) %>%
   mutate(oddlo = lower / (1 - lower))  %>%
   mutate(oddhi = upper / (1 - upper))
 
 testdata1F = data.frame(age = seq(5, 75, by=0.2), gender = "Female")
-fits1F = predict(mdltmp1F, newdata = testdata1F, type = 'response', se=T)
+fits1F = predict(mdltmp1F, newdata=testdata1F, type='response', se=T)
 predicts1F = data.frame(testdata1F, fits1F) %>% 
-  mutate(lower = fit - 1.96 * se.fit,
-         upper = fit + 1.96 * se.fit) %>%
+  mutate(lower = fit - 1.96*se.fit,
+         upper = fit + 1.96*se.fit) %>%
   mutate(odds = fit / (1 - fit)) 
 
 testdata1M = data.frame(age = seq(5, 75, by=0.2), gender = "Male")
-fits1M = predict(mdltmp1M, newdata = testdata1M, type = 'response', se=T)
+fits1M = predict(mdltmp1M, newdata=testdata1M, type='response', se=T)
 predicts1M = data.frame(testdata1M, fits1M) %>% 
-  mutate(lower = fit - 1.96 * se.fit,
-         upper = fit + 1.96 * se.fit) %>%
+  mutate(lower = fit - 1.96*se.fit,
+         upper = fit + 1.96*se.fit) %>%
   mutate(odds = fit / (1 - fit)) 
 
 predicts1sex <- rbind(predicts1F, predicts1M) %>%
-  mutate(minodd = min(odds, na.rm = T)) %>%
+  mutate(minodd = min(odds, na.rm=T)) %>%
   mutate(oddlo = lower / (1 - lower)) %>%
   mutate(oddhi = upper / (1 - upper)) 
 
-p2b <- ggplot(aes(x = age,y = fit, color = gender),  data = predicts1sex) +
-  geom_ribbon(aes(ymin = lower, ymax = upper, fill = gender), alpha = 0.25) +
-  geom_line(aes(color = gender), size = 1.5) +
-  labs(x = "Age", y = "Seroprevalence", fill = "", color = "") +
+p2b <- ggplot(aes(x=age,y=fit, color=gender),  data=predicts1sex) +
+  geom_ribbon(aes(ymin = lower, ymax=upper, fill=gender), alpha=0.25) +
+  geom_line(aes(color=gender), size=1.5) +
+  labs(x = "Age", y = "Seroprevalence", fill="", color="") +
   theme_classic() + 
+  # geom_hline(yintercept = 1, linetype = "dashed") +
    scale_x_continuous(breaks = seq(5,75,5)) +
-  scale_y_continuous(limits = c(0, 0.8))+
+  scale_y_continuous(limits=c(0, 1))+
+  theme(legend.position = c(0.8, 0.95)) +
   scale_color_manual(values = cbbPalette[c(3:4)]) +
   scale_fill_manual(values = cbbPalette[c(3:4)]) 
 
-p2b
-
+p2a + p2b + plot_layout(widths = unit(c(7, 7), c('cm', 'cm')), heights = unit(5, "cm"))
 ```
-  
-Panel C: Distribution of household size by age among SARS-CoV-2 seronegative and seropositive individuals. 
-  
 
-```{r fig2c, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r fig2c, echo=FALSE, warnings=FALSE, results='hide'}
 # Panel C
-stat.test2c <- subset(dat3) %>%
+stat.test01<-subset(dat3) %>%
   mutate(inter = interaction(covidser3, agecat)) %>%
   group_by(agecat) %>%
   t_test(hsize ~ covidser3) %>%
@@ -459,27 +308,24 @@ stat.test2c <- subset(dat3) %>%
   add_significance("p.adj") %>%
   add_xy_position(x = "agecat")
 
-p2c <- ggplot(data = dat3, aes(x = covidser3, y = hsize, 
-                        group = covidser3, color = covidser3)) +
+p2c<-ggplot(data = dat3, aes(x= covidser3, y=hsize, 
+                        group = covidser3, color=covidser3)) +
   geom_boxplot(size = 1) +
   geom_jitter(alpha= 0.2, size = 1) +
-  facet_grid(. ~ agecat, switch = "x") +
-  guides(x = "none") +
-  xlab("Age range") +
+  facet_grid(. ~ agecat, switch="x") +
+  guides(x="none") +
+  # ggtitle("All households") +
+  xlab("Age group") +
   ylab("Residents in household") +
   scale_color_manual("SARS-CoV-2 IgG", labels = c("Negative", "Positive"), values = cbbPalette[c(5:6)]) +
-  scale_y_continuous(breaks = seq(1, 14, 1), limits = c(0, 14)) +
+  scale_y_continuous(breaks=seq(1,12,1), limits = c(0, 16)) +
+  # ggtitle("Household size by age") +
   theme_classic() +
-  stat_pvalue_manual(stat.test2c, hide.ns=T, label = "p.adj.signif", 
-                     tip.length = 0, xmin = "group1", xmax = "group2")
-
-p2c
+  theme(legend.position = c(0.1, 0.9)) 
 
 ```
-  
-Panel D: OR and 95% CI stratified by age category and presence of children in the household. 
-   
-```{r fig2d, echo = FALSE, warnings = FALSE, results = 'hide'}
+
+```{r fig2d, echo=FALSE, warnings=FALSE, results='hide'}
 # Panel D
 # Compute proportion and CI of seroprevalence in the following groups:
 # Age breaks 0, 15, 30, 45, 60
@@ -499,7 +345,15 @@ for(i in 1:10){
 
 proptable$age <- factor(proptable$age,levels = agenames)
 
-stat.test2d <- subset(dat3, agecat != "<18") %>%
+pval <- data.frame(cbind(age=levels(proptable$age), p=NA, ast=NA))
+for(i in 2:5){
+ tmp<-proptable[proptable$age==pval$age[i],4:3]
+ tmp2<-prop.test(x=tmp$pos, n=tmp$tot)
+  pval$p[i] <- tmp2$p.value
+  pval$ast[i] <- c("", "*")[(tmp2$p.value<0.05)+1]
+}
+
+stat.test0<-subset(dat3, agecat != "<18") %>%
   mutate(inter = interaction(u18yn, agecat)) %>%
   group_by(agecat) %>%
   t_test(covidser2 ~ u18yn) %>%
@@ -507,28 +361,24 @@ stat.test2d <- subset(dat3, agecat != "<18") %>%
   add_significance("p.adj")  %>%
   add_xy_position(x = "agecat")
 
-p2d <- ggplot() +
+p2d<-ggplot() +
   geom_pointrange(data=proptable, mapping = aes(ymin = lower,
                                 ymax = upper, 
                                 y = prop,
                                 x = age,
                                 color = children),
                   position = position_dodge(width= 0.2), shape = 16) +
-  xlab("Age range") +
+  xlab("Age group") +
   ylab("Seroprevalence") +
   scale_y_continuous(limits = c(0, 0.8)) +
+  # geom_text(data=pval, aes(x=age, y=max(proptable$upper, na.rm=T) +0.02, label = ast), size = 8)+
   theme_classic()+
   scale_color_manual("Children in household", labels = c("No", "Yes"), values = cbbPalette[c(1:2)]) +
-  stat_pvalue_manual(stat.test2d, label = "p.adj.signif", tip.length = 0.01, 
-                     x = "agecat", y.position = 0.6, hide.ns = T)
-
-p2d
+  theme(legend.position = c(0.3, 0.9)) 
 
 ```
-  
-Panel E: Variation in seroprevalence among children by household composition (number of children and number of adults). 
-  
-```{r fig2e, echo = FALSE, warnings = FALSE, results = 'hide'}
+
+```{r fig2e, echo=FALSE, warnings=FALSE, results='hide'}
 
 # Panel E
 proptable <- data.frame(adult = rep(c(1, 2), each=3)) %>%
@@ -560,46 +410,48 @@ tmplabel <- data.frame(cbind(inter = levels(proptable$inter),
                              children = rep(c("1 child", "2 children", ">=3 children"), each=2)))
 
 
-stat.test2e <- subset(dat3, !is.na(u18cat) & adcat %in% c("1", "2")) %>%
+stat.test2<-subset(dat3, !is.na(u18cat) & adcat %in% c("1", "2")) %>%
   mutate(inter = interaction(u18cat, adcat)) %>%
+  # group_by(totad) %>%
   t_test(covidser2 ~ u18cat) %>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance("p.adj") %>%
   add_xy_position(x = "u18cat") %>%
   mutate(y.position = 1 - seq(0.1, 0.2, 0.05))
 
-p2e <-ggplot() +
-  geom_pointrange(data = proptable, mapping = aes(ymin = lower,
+p2e<-ggplot() +
+  geom_pointrange(data=proptable, mapping = aes(ymin = lower,
                                                 ymax = upper, 
                                                 y = prop,
                                                 x = children,
-                                                color = adult),
-                  position = position_dodge(width = 0.2), shape = 16) +
+                                                color=adult),
+                  position = position_dodge(width= 0.2), shape = 16) +
   xlab("Number of children in household") +
   scale_x_discrete(labels = c("1", "2", ">=3")) +
   ylab("Seroprevalence") +
-  scale_y_continuous(limits = c(0, 0.9)) +
+  #  geom_text(data=pval, aes(x=adult, y=max(proptable$upper, na.rm=T) +0.02, label = ast), size = 8) +
+  # geom_text(data=pval, aes(x=adult, y=max(proptable$upper)+0.5, label=ast), size = 8) +
+  scale_y_continuous(limits=c(0, 1)) +
   theme(legend.position = c(0.1, 0.7)) +
-  coord_cartesian(clip = "off") +
+  coord_cartesian(clip="off") +
   theme_classic() +
-  scale_color_manual("", labels = c("1 adult", "2 adults"), values = cbbPalette[c(1:2)]) +
-  stat_pvalue_manual(stat.test2e, hide.ns = T, label = "p.adj.signif", tip.length = 0.01) 
+  scale_color_manual("", labels=c("1 adult", "2 adults"), values = cbbPalette[c(1:2)]) +
+  stat_pvalue_manual(stat.test2, hide.ns=T, label = "p.adj.signif", tip.length = 0.01) +
+  theme(legend.position = c(0.8, 0.2))
 
-p2e
+p2c + p2d + plot_layout(widths = unit(c(7, 7), c('cm', 'cm')), heights = unit(5, "cm"))
+
+p2e + plot_layout(widths = unit(c(7), c('cm')), heights = unit(5, "cm"))
 
 ```
-  
 
+#### Figure 3
 
-### Figure 3
-    
-Panel A: Household income (per capita) by employment status and gender. 
-  
-```{r fig3a, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r fig3, echo=FALSE, warnings=FALSE, results='hide'}
 # Figure 3
 # Panel A
 
-stat.test3a <- subset(adudat, !is.na(employedyn) & !is.na(dpc)) %>%
+stat.test3<-subset(adudat, !is.na(employedyn) & !is.na(dpc)) %>%
   mutate(inter = interaction(employedyn, gender)) %>%
   group_by(employedyn) %>%
   t_test(dpc ~ gender) %>%
@@ -608,30 +460,30 @@ stat.test3a <- subset(adudat, !is.na(employedyn) & !is.na(dpc)) %>%
   add_xy_position(x = "employedyn") %>%
   mutate(xmin = c(1.4, 1.4), xmax = c(1.6, 1.6))
 
-p3a <- adudat %>%
+p3a<-adudat %>%
   subset(!is.na(employedyn) & !is.na(dpc)) %>%
-  mutate(dpc = ifelse(dpc == 0, dpc + 0.5, dpc)) %>%
+  mutate(dpc = ifelse(dpc==0, dpc+0.5, dpc)) %>%
   ggplot(aes(x = gender, y = dpc, color = gender,
                        group = gender)) +
   geom_boxplot(alpha = .05, size = 1, width = 1.2) +
   geom_jitter(alpha = .25, size = 1) +
   facet_grid(. ~ employedyn, switch="x") +
-  guides(x = "none") +
+  guides(x="none") +
   xlab("Employed") +
   ylab("Income per capita (USD/day)") +
-  scale_y_continuous(limits = c(0, 24)) +
-  stat_pvalue_manual(stat.test3a, label = "p.adj.signif", linetype = 0,
-                     y.position = 22) +
+  scale_y_continuous(limits = c(0, 34)) +
+  # scale_y_continuous(trans="log2", breaks = c(1.25, 2.5, 5, 10, 20, 40), 
+  #                    limits = c(0.25, 50), labels = c("1.25", "2.5", "5", "10", "20", "40")) +
+  stat_pvalue_manual(stat.test3, label="p.adj.signif",linetype=0,
+                     y.position = 25) +
   theme_classic() +
-  scale_color_manual("", values = cbbPalette[c(3,4)]) 
+  scale_color_manual("", values = cbbPalette[c(3,4)]) +
+  theme(legend.position = c(0.15, 0.95)) 
 
-p3a
-```
-  
-Panel B: Seroprevalence by household income (per capita), employment status and gender.  
-  
-```{r fig3b, echo = FALSE, warnings = FALSE, results = 'hide'}
+
+
 # Panel B
+
 proptable <- data.frame(emp = rep(rep(levels(dat3$employedyn), each=2),2)) %>%
   mutate(sex = rep(c("Male", "Female"), each = 4)) %>% 
   mutate(inc = rep(levels(dat3$inchi), 4)) %>% 
@@ -656,7 +508,15 @@ proptable <- proptable %>%
   mutate(oddhi = (upper / (1 - upper)) / minodd) %>%
   mutate(inter = interaction(emp, inc))
 
-stat.test3b <- subset(adudat, !is.na(inchi) & !is.na(employedyn)) %>%
+pval <- data.frame(cbind(inter=levels(proptable$inter), p=NA, ast=NA))
+for(i in 1:4){
+  tmp<-proptable[proptable$inter==pval$inter[i],5:4]
+  tmp2<-prop.test(x=tmp$pos, n=tmp$tot)
+  pval$p[i] <- tmp2$p.value
+  pval$ast[i] <- c("", "*")[(tmp2$p.value<0.05)+1]
+}
+
+stat.test4<-subset(adudat, !is.na(inchi) & !is.na(employedyn)) %>%
   mutate(inter = interaction(employedyn, inchi)) %>%
   group_by(inter) %>%
   t_test(covidser2 ~ gender) %>%
@@ -667,7 +527,9 @@ stat.test3b <- subset(adudat, !is.na(inchi) & !is.na(employedyn)) %>%
 tmplabel <- data.frame(cbind(inter = levels(proptable$inter),
                              emp = rep(c("Unemployed", "Employed"), 2),
                              inc = rep(c("<1.25 USD/day", ">=1.25 USD/day"), each=2))) 
-p3b <- ggplot() +
+
+
+p3b<-ggplot() +
   geom_pointrange(data=proptable, mapping = aes(ymin = lower,
                                                 ymax = upper, 
                                                 y = prop,
@@ -676,52 +538,55 @@ p3b <- ggplot() +
                   position = position_dodge(width= 0.2), shape = 16) +
   xlab("Employment") +
   ylab("Seroprevalence") +
-  scale_x_discrete("", breaks = NULL) +
-  scale_y_continuous(limits = c(-0.06, 1)) +
-  geom_text(data = tmplabel, aes(x = inter, y = -0.01, label = emp), size = 2.5) +
-  geom_text(data = tmplabel, aes(x = inter, y = -0.06, label = inc), size = 2.5) +
+  scale_x_discrete("", breaks=NULL) +
+  # geom_text(data=pval, aes(x=inter, y=max(proptable$upper)+0.5, label=ast), size = 8) +
+  scale_y_continuous(limits=c(-0.06, 1)) +
+  geom_text(data=tmplabel, aes(x=inter, y = -0.01, label = emp), size=2.5) +
+  geom_text(data=tmplabel, aes(x=inter, y = -0.06, label = inc), size=2.5) +
   coord_cartesian(clip="off") +
-  stat_pvalue_manual(stat.test3b, hide.ns=T, label = "p.adj.signif", y.position = 0.7,
-                     linetype = 0) +
+  stat_pvalue_manual(stat.test4, hide.ns=T, label = "p.adj.signif", y.position = 0.7,
+                     linetype=0) +
   theme_classic() +
+  theme(legend.position = c(0.8, 0.95)) +
   scale_color_manual("", values = cbbPalette[c(3,4)]) +
   theme(axis.text=element_text(size=8))
 
+p3a + p3b + plot_layout(widths = unit(c(7, 9), c('cm', 'cm')), heights = unit(5, "cm"))
 ```
 
-  
-### Multilevel model
-  
-(1) Are children more susceptible to SARS-CoV-2 after adjusting for household clustering and household size?  
-  
-```{r mlm1, echo = FALSE, warnings = FALSE, results = 'hide'}
+
+Are children more susceptible to SARS-CoV-2 after adjusting for household clustering and household size?
+
+
+```{r mlm1, echo=FALSE, warnings=FALSE, results='hide'}
 
 mdl1 <- glmer(covidser2 ~ ragecat + dpc +
-              rgender + hsize +
+              rgender +  + hsize +
                  (1 | hhid),
-                 data = subset(dat3, !is.na(covidser2)), family = binomial, control = glmerControl(optimizer = "Nelder_Mead"))
-
+                 data = dat3, family = binomial, control=glmerControl(optimizer="Nelder_Mead"))
 tmpse1 <- sqrt(diag(vcov(mdl1)))
 tmpres1 <- cbind(OR = exp(fixef(mdl1)), LL = exp(fixef(mdl1) - 1.96 * tmpse1), UL = exp(fixef(mdl1) + 1.96 * tmpse1))
-rownames(tmpres1) <-  c("Intercept", levels(dat3$ragecat)[-(1)], "Income", "Female gender", "Total residents")
+rownames(tmpres1) <-  c("Intercept", levels(dat3$ragecat)[-1], "Income", "Female gender", "Total residents")
 
 ```
 
-```{r table1, echo = FALSE, include = TRUE, warnings = FALSE}  
+```{r table1, echo=FALSE, include=TRUE, warnings=FALSE}  
 kable(tmpres1)
 ```
 
-AIC: `r extractAIC(mdl1)[2]`; ICC: `r performance::icc(mdl1)[1]`  
-  
-
-(2) Does the size of the household predict seropositivity among adults better than presence of children does?
+AIC: `r extractAIC(mdl1)[2]`; ICC: `r performance::icc(mdl1)[1]`
 
 
-```{r mlm2, include = FALSE, results = 'hide', warnings = FALSE}
+Does the size of the household predict seropositivity among adults better than presence of children does?
+
+
+```{r mlm2, include=FALSE, results='hide', warnings=FALSE}
+
+
 mdl2 <- glmer(covidser2 ~ ragecat + dpc +
               rgender +  u18yn + 
                  (1 | hhid),
-                 data = adudat, family = binomial, control = glmerControl(optimizer="Nelder_Mead"))
+                 data = adudat, family = binomial, control=glmerControl(optimizer="Nelder_Mead"))
 tmpse2 <- sqrt(diag(vcov(mdl2)))
 tmpres2 <- cbind(OR = exp(fixef(mdl2)), LL = exp(fixef(mdl2) - 1.96 * tmpse2), UL = exp(fixef(mdl2) + 1.96 * tmpse2))
 rownames(tmpres2) <-  c("Intercept", levels(adudat$ragecat)[-(1:2)], "Income",
@@ -731,38 +596,40 @@ rownames(tmpres2) <-  c("Intercept", levels(adudat$ragecat)[-(1:2)], "Income",
 mdl3 <- glmer(covidser2 ~ ragecat + dpc +
               rgender +  hsize +
                  (1 | hhid),
-                 data = adudat, family = binomial, control=glmerControl(optimizer = "Nelder_Mead"))
+                 data = dat3, family = binomial, control=glmerControl(optimizer="Nelder_Mead"))
 tmpse3 <- sqrt(diag(vcov(mdl3)))
 tmpres3 <- cbind(OR = exp(fixef(mdl3)), LL = exp(fixef(mdl3) - 1.96 * tmpse3), UL = exp(fixef(mdl3) + 1.96 * tmpse3))
-rownames(tmpres3) <-  c("Intercept", levels(adudat$ragecat)[-(1:2)], "Income",
+rownames(tmpres3) <-  c("Intercept", levels(dat3$ragecat)[-(1)], "Income",
 "Female gender", "Total residents in household")
 
 ```
 
-```{r table2, echo = FALSE, include = TRUE, warnings = FALSE}  
+```{r table2, echo=FALSE, include=TRUE, warnings=FALSE}  
 kable(tmpres2, "simple")
 
 kable(tmpres3, "simple")
 ```
-  
 
-AIC values for these models are `r extractAIC(mdl2)[2]`, `r extractAIC(mdl3)[2]` respectively.  
-  
-ICC values are `r performance::icc(mdl2)[2]`, `r performance::icc(mdl3)[2]` respectively.   
+
+AIC values for these models are `r extractAIC(mdl2)[2]`, `r extractAIC(mdl3)[2]`.
+ICC values are `r performance::icc(mdl2)[2]`, `r performance::icc(mdl3)[2]`.   
 
 ### Mediation analysis
 
 Is the effect of presence of children mediated by increased household size?
 
-```{r med1, include = FALSE, results = 'hide', warnings = FALSE}
-# Mediation model 
-med.fit <- glmer(hsize ~ u18yn + age + rgender +
-                 (1 | hhid), 
+```{r med1, include=FALSE, results='hide', warnings=FALSE}
+# # model-based approach
+# dathh <- subset(dat3, indid == 1)
+# dathh <- dathh[, c("casanova", "hsize", "u18yn")]
+# Mediator model 
+med.fit <- glmer(hsize ~ u18yn + age + rsexM +
+                 (1 | casanova), 
                  data = adudat, family = poisson)   
 
 # Outcome model
-out.fit <- glmer(covidser2 ~ u18yn + age + rgender + hsize + 
-                 (1 | hhid), 
+out.fit <- glmer(covidser2 ~ u18yn + age + rsexM + hsize + 
+                 (1 | casanova), 
                  data = adudat, family = binomial) 
 
 # Mediation analysis
@@ -790,17 +657,18 @@ extract_mediation_summary <- function (x) {
 
 medsum <- extract_mediation_summary(summary(med.out))
 
+
+summary(med.out)
+
 ```
 
-`r kable(medsum,col.names = c("Estimate", "LB", "UB", "p"))`  
-  
+`r kable(medsum, col.names = c("Estimate", "LB", "UB", "p"))`
+
+
+
 ### Adjusted seroprevalence estimates
-- Adjusted for test sensitivity/sepcificity using multilevel Bayesian logistic model with random intercepts by household.
-  
-- Seroprevalence in population of eligible individuals who are included in census is estimated using post-stratification of age- and gender-specific model estimates.  
 
-
-```{r adj1, eval = TRUE, echo = FALSE, warnings = FALSE, results = 'hide'}
+```{r adj1, eval = FALSE, echo=FALSE, warnings=FALSE, results='hide'}
 
 run_analysis_stan_re <- function(model_script,
                                  dat,
@@ -841,7 +709,6 @@ run_analysis_stan_re <- function(model_script,
   if (!dir.exists('results')) {dir.create('results')}
   stan_out_file <- paste0("stan_fit_", analysis,".rds")
   
-   if (!file.exists(stan_out_file)) {
 
     re_model <- stan_model(model_script)
     
@@ -869,10 +736,7 @@ run_analysis_stan_re <- function(model_script,
                          control = control)
     
     saveRDS(stan_est, stan_out_file)
-   } else {
-    cat("Loading pre-computed posteriors from ", stan_out_file, "\n")
-    stan_est <- readRDS(stan_out_file)
-  }
+ 
   
   ## extract log-likelihoods
   stan_ll <- loo::extract_log_lik(stan_est) %>% loo::loo()
@@ -991,7 +855,7 @@ poststrat <- function(pop_cat_p) {
   
   # sex-specific probabilities
   sex_re <- pop_cat_p %>%
-    mutate(var = "Gender") %>%
+    mutate(var = "Sex") %>%
     rename(val = sex) %>%
     group_by(sim, var, val) %>%
     summarize(p = weighted.mean(seropos, pop)) %>%
@@ -1015,7 +879,7 @@ poststrat <- function(pop_cat_p) {
   
   # Stratified by both age and sex 
   full_re <- pop_cat_p %>%
-    mutate(var = "Age/gender", val = interaction(age_cat, sex)) %>%
+    mutate(var = "Full", val = interaction(age_cat, sex)) %>%
     group_by(sim, var, val) %>%
     summarize(p = weighted.mean(seropos, pop)) %>%
     ungroup()
@@ -1075,11 +939,11 @@ datall <- dat2
 
 datall <- datall %>%
   mutate(age_cat = ordered(agecat, levels = c("<18", "18-29", "30-44", "45-59", ">=60"))) %>%
-  rename(sex = gender) 
+  rename(sex = sexM) 
 
 ## Subset with serology results  
 sero_dat <- subset(datall, !is.na(razao_l45)) %>%
-  rename(household_id = hhid) %>% 
+  rename(household_id = casanova) %>% 
   group_by(household_id) %>%
   mutate(
     hh_obs = n(),
@@ -1166,7 +1030,7 @@ sero_age_cats <- sero_ages %>%
     )
   ) 
 
-if (!file.exists(out_est_file_lo)) {
+
   ## model the overall seropositivity with a random effect for household
   ## Seropositivity threshold = 0.8
   re_seropos_lo <- run_analysis_stan_re(
@@ -1193,9 +1057,7 @@ if (!file.exists(out_est_file_lo)) {
   )
   
   saveRDS(re_seropos_lo, out_est_file_lo)
-} else {
-  re_seropos_lo <- readRDS(out_est_file_lo)
-}
+
 pop_cat_p_lo_s <- re_seropos_lo$pop_cat_p_s
 pop_cat_p_lo_c <- re_seropos_lo$pop_cat_p_c
 
@@ -1228,18 +1090,15 @@ reslo_s <- subset_est_lo_s %>%
         formatC(2, format = "f"), ")"
     ))
 
-colnames(reslo_c)[1:2] <- colnames(reslo_s)[1:2] <- c("Variable(s)", "Subgroup")
-
-
 ```
 
-#### Estimates for study participants
-```{r table3, eval= TRUE, echo=FALSE, include=TRUE, warnings=FALSE}  
+#### Within sample
+```{r table3, eval= FALSE, echo=FALSE, include=TRUE, warnings=FALSE}  
 kable(reslo_s)
 ```
 
 
-#### Post-stratified estimates for entire census population
-```{r table4, eval = TRUE, echo=FALSE, include=TRUE, warnings=FALSE}  
+#### Post-stratified estimates for entire population
+```{r table4, eval = FALSE, echo=FALSE, include=TRUE, warnings=FALSE}  
 kable(reslo_c)
 ```
