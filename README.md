@@ -8,3 +8,5 @@ This repository contains:
 - Additional analysis code
 
 Deidentified dataset available at: https://doi.org/10.5061/dryad.m63xsj44t
+
+https://creativecommons.org/licenses/by-nc-sa/4.0/
