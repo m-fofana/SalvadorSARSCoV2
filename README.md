@@ -9,4 +9,4 @@ This repository contains:
 
 Deidentified dataset available at: https://doi.org/10.5061/dryad.m63xsj44t
 
-https://creativecommons.org/licenses/by-nc-sa/4.0/
+License: CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/)
